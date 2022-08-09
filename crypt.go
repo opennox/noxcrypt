@@ -18,6 +18,7 @@ const (
 	ModifierBin = 13
 	MonsterBin  = 23
 	MapKey      = 19
+	SaveKey     = 27
 )
 
 const Block = blowfish.BlockSize
@@ -43,6 +44,8 @@ func KeyForFile(path string) (int, bool) {
 	switch filepath.Ext(path) {
 	case ".map":
 		return MapKey, true
+	case ".plr":
+		return SaveKey, true
 	}
 	return 0, false
 }
