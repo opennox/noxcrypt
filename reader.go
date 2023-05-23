@@ -1,6 +1,7 @@
 package crypt
 
 import (
+	"encoding/binary"
 	"errors"
 	"io"
 
@@ -71,6 +72,50 @@ func (r *Reader) Read(p []byte) (int, error) {
 		p = p[n:]
 	}
 	return total, nil
+}
+
+func (r *Reader) ReadU8() (byte, error) {
+	var b [1]byte
+	_, err := r.Read(b[:])
+	return b[0], err
+}
+
+func (r *Reader) ReadU16() (uint16, error) {
+	var b [2]byte
+	_, err := r.Read(b[:])
+	return binary.LittleEndian.Uint16(b[:]), err
+}
+
+func (r *Reader) ReadU32() (uint32, error) {
+	var b [4]byte
+	_, err := r.Read(b[:])
+	return binary.LittleEndian.Uint32(b[:]), err
+}
+
+func (r *Reader) ReadU64() (uint64, error) {
+	var b [8]byte
+	_, err := r.Read(b[:])
+	return binary.LittleEndian.Uint64(b[:]), err
+}
+
+func (r *Reader) ReadI8() (int8, error) {
+	v, err := r.ReadU8()
+	return int8(v), err
+}
+
+func (r *Reader) ReadI16() (int16, error) {
+	v, err := r.ReadU16()
+	return int16(v), err
+}
+
+func (r *Reader) ReadI32() (int32, error) {
+	v, err := r.ReadU32()
+	return int32(v), err
+}
+
+func (r *Reader) ReadI64() (int64, error) {
+	v, err := r.ReadU64()
+	return int64(v), err
 }
 
 func (r *Reader) Align() error {

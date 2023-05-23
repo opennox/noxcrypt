@@ -1,6 +1,7 @@
 package crypt
 
 import (
+	"encoding/binary"
 	"io"
 
 	"golang.org/x/crypto/blowfish"
@@ -96,6 +97,48 @@ func (w *Writer) Write(p []byte) (int, error) {
 		p = p[n:]
 	}
 	return total, nil
+}
+
+func (w *Writer) WriteU8(v byte) error {
+	_, err := w.Write([]byte{v})
+	return err
+}
+
+func (w *Writer) WriteU16(v uint16) error {
+	var b [2]byte
+	binary.LittleEndian.PutUint16(b[:], v)
+	_, err := w.Write(b[:])
+	return err
+}
+
+func (w *Writer) WriteU32(v uint32) error {
+	var b [4]byte
+	binary.LittleEndian.PutUint32(b[:], v)
+	_, err := w.Write(b[:])
+	return err
+}
+
+func (w *Writer) WriteU64(v uint64) error {
+	var b [8]byte
+	binary.LittleEndian.PutUint64(b[:], v)
+	_, err := w.Write(b[:])
+	return err
+}
+
+func (w *Writer) WriteI8(v int8) error {
+	return w.WriteU8(uint8(v))
+}
+
+func (w *Writer) WriteI16(v int16) error {
+	return w.WriteU16(uint16(v))
+}
+
+func (w *Writer) WriteI32(v int32) error {
+	return w.WriteU32(uint32(v))
+}
+
+func (w *Writer) WriteI64(v int64) error {
+	return w.WriteU64(uint64(v))
 }
 
 // WriteEmpty flushes the data (if any), which aligns it to a block size,
