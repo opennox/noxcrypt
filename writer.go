@@ -2,6 +2,7 @@ package crypt
 
 import (
 	"encoding/binary"
+	"errors"
 	"io"
 
 	"golang.org/x/crypto/blowfish"
@@ -20,10 +21,12 @@ func NewWriter(w io.Writer, key int) (*Writer, error) {
 
 type Writer struct {
 	w   io.Writer
+	at  io.WriterAt
 	c   *blowfish.Cipher
 	buf [Block]byte
 	n   int
 	off int64
+	crc uint32
 	// NoZero is a compatibility flag that forces the writer to not cleanup internal buffer with zeros.
 	// The result is that short writes followed by Flush may expose data from previous long writes.
 	// It is needed to keep 1:1 output from the original game engine.
@@ -33,8 +36,20 @@ type Writer struct {
 // Reset internal state and assign a new underlying writer to it.
 func (w *Writer) Reset(d io.Writer) {
 	w.w = d
+	w.at, _ = d.(io.WriterAt)
 	w.n = 0
 	w.off = 0
+	w.ResetCRC()
+}
+
+// ResetCRC resets CRC internal state.
+func (w *Writer) ResetCRC() {
+	w.crc = ZeroCRC
+}
+
+// CRC returns current CRC checksum.
+func (w *Writer) CRC() uint32 {
+	return w.crc
 }
 
 // Written returns a number of bytes written.
@@ -44,6 +59,7 @@ func (w *Writer) Written() int64 {
 }
 
 func (w *Writer) flush() error {
+	w.crc = UpdateCRC(w.crc, w.buf[:])
 	var dst [Block]byte
 	w.c.Encrypt(dst[:], w.buf[:])
 	_, err := w.w.Write(dst[:])
@@ -143,12 +159,55 @@ func (w *Writer) WriteI64(v int64) error {
 
 // WriteEmpty flushes the data (if any), which aligns it to a block size,
 // and then writes an additional empty block without encryption.
-func (w *Writer) WriteEmpty() error {
+// This block can be later written with WriteBlockAt, WriteU64At, WriteU32At, etc.
+func (w *Writer) WriteEmpty() (int64, error) {
 	if err := w.Flush(); err != nil {
-		return err
+		return 0, err
 	}
 	var empty [Block]byte
+	w.crc = UpdateCRC(w.crc, empty[:])
 	_, err := w.w.Write(empty[:])
+	off := w.off
 	w.off += Block
+	return off, err
+}
+
+// WriteBlockAt encrypts and writes a block at an offset, previously returned by WriteEmpty.
+// It requires the underlying writer to implement io.WriterAt.
+func (w *Writer) WriteBlockAt(buf [Block]byte, off int64) error {
+	if w.at == nil {
+		return errors.New("WriteAt is not supported by the underlying writer")
+	}
+	var dst [Block]byte
+	w.c.Encrypt(dst[:], buf[:])
+	_, err := w.at.WriteAt(dst[:], off)
 	return err
+}
+
+// WriteU64At encrypts and writes uint64 at an offset, previously returned by WriteEmpty.
+// It requires the underlying writer to implement io.WriterAt.
+func (w *Writer) WriteU64At(v uint64, off int64) error {
+	var buf [Block]byte
+	binary.LittleEndian.PutUint64(buf[:], v)
+	return w.WriteBlockAt(buf, off)
+}
+
+// WriteU32At encrypts and writes uint32 at an offset, previously returned by WriteEmpty.
+// It requires the underlying writer to implement io.WriterAt.
+func (w *Writer) WriteU32At(v uint32, off int64) error {
+	var buf [Block]byte
+	binary.LittleEndian.PutUint32(buf[:], v)
+	return w.WriteBlockAt(buf, off)
+}
+
+// WriteI64At encrypts and writes int64 at an offset, previously returned by WriteEmpty.
+// It requires the underlying writer to implement io.WriterAt.
+func (w *Writer) WriteI64At(v int64, off int64) error {
+	return w.WriteU64At(uint64(v), off)
+}
+
+// WriteI32At encrypts and writes int32 at an offset, previously returned by WriteEmpty.
+// It requires the underlying writer to implement io.WriterAt.
+func (w *Writer) WriteI32At(v int32, off int64) error {
+	return w.WriteU32At(uint32(v), off)
 }

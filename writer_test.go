@@ -55,7 +55,7 @@ func TestWriter(t *testing.T) {
 	require.Equal(t, int64(8), w.Written())
 	require.Equal(t, int(8), buf.Len())
 
-	err = w.WriteEmpty()
+	_, err = w.WriteEmpty()
 	require.NoError(t, err)
 	require.Equal(t, int64(16), w.Written())
 	require.Equal(t, int(16), buf.Len())
