@@ -116,17 +116,18 @@ func (f *File) WriteString(s string) (int, error) {
 
 // WriteEmpty flushes the data (if any), which aligns it to a block size,
 // and then writes an additional empty block without encryption.
-func (f *File) WriteEmpty() error {
+func (f *File) WriteEmpty() (int64, error) {
 	if err := f.Flush(); err != nil {
-		return err
+		return 0, err
 	}
 	f.i = 0
 	f.mode = fileWrite
 	var empty [Block]byte
 	copy(f.buf[:], empty[:])
 	_, err := f.f.Write(empty[:])
+	off := f.off
 	f.off += Block
-	return err
+	return off, err
 }
 
 func (f *File) switchWrite() error {
