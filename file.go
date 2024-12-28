@@ -65,7 +65,9 @@ func (f *File) Flush() error {
 	if f.i <= 0 {
 		return nil
 	}
-	f.c.Encrypt(f.buf[:], f.buf[:])
+	if f.c != nil {
+		f.c.Encrypt(f.buf[:], f.buf[:])
+	}
 	_, err := f.f.Write(f.buf[:])
 	f.buf = [8]byte{}
 	f.off += int64(Block - f.i)
@@ -192,7 +194,9 @@ func (f *File) readNext() error {
 		return err
 	}
 	f.i = 0
-	f.c.Decrypt(f.buf[:], f.buf[:])
+	if f.c != nil {
+		f.c.Decrypt(f.buf[:], f.buf[:])
+	}
 	return nil
 }
 

@@ -12,6 +12,7 @@ import (
 
 // Constants for known crypto keys.
 const (
+	NoKey       = -1
 	SoundSetBin = 5
 	ThingBin    = 7
 	GameDataBin = 8
@@ -52,6 +53,9 @@ func KeyForFile(path string) (int, bool) {
 
 // Encode a buffer with a given key.
 func Encode(p []byte, key int) error {
+	if key == NoKey {
+		return nil
+	}
 	c, err := NewCipher(key)
 	if err != nil {
 		return err
@@ -61,6 +65,9 @@ func Encode(p []byte, key int) error {
 
 // EncodeWith encodes a buffer with a given cipher.
 func EncodeWith(c *blowfish.Cipher, p []byte) error {
+	if c == nil {
+		return nil
+	}
 	if len(p)%Block != 0 {
 		return errInvalidSize
 	}
@@ -73,6 +80,9 @@ func EncodeWith(c *blowfish.Cipher, p []byte) error {
 
 // Decode a buffer with a given key.
 func Decode(p []byte, key int) error {
+	if key == NoKey {
+		return nil
+	}
 	if len(p)%Block != 0 {
 		return errInvalidSize
 	}
@@ -89,6 +99,9 @@ func Decode(p []byte, key int) error {
 
 // DecodeWith decodes a buffer with a given cipher.
 func DecodeWith(c *blowfish.Cipher, p []byte) error {
+	if c == nil {
+		return nil
+	}
 	if len(p)%Block != 0 {
 		return errInvalidSize
 	}
@@ -101,7 +114,9 @@ func DecodeWith(c *blowfish.Cipher, p []byte) error {
 
 // NewCipher creates a new cipher using Nox key with a given index.
 func NewCipher(key int) (*blowfish.Cipher, error) {
-	if key < 0 || key > maxKeyInd {
+	if key == NoKey {
+		return nil, nil
+	} else if key < 0 || key > maxKeyInd {
 		return nil, fmt.Errorf("invalid key index: %d", key)
 	}
 	data := keyByInd(key)

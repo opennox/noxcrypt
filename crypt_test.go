@@ -22,3 +22,19 @@ func TestEncode(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, encoded, string(buf))
 }
+
+func TestEncodeBypass(t *testing.T) {
+	const (
+		key     = NoKey
+		decoded = "ROLF\x01\x00\x00\x00"
+	)
+
+	buf := []byte(decoded)
+	err := Decode(buf, key)
+	require.NoError(t, err)
+	require.Equal(t, decoded, string(buf))
+
+	err = Encode(buf, key)
+	require.NoError(t, err)
+	require.Equal(t, decoded, string(buf))
+}

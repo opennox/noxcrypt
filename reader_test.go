@@ -2,7 +2,6 @@ package crypt
 
 import (
 	"io"
-	"io/ioutil"
 	"strings"
 	"testing"
 
@@ -18,7 +17,7 @@ func TestReader(t *testing.T) {
 
 	r, err := NewReader(strings.NewReader(encoded), key)
 	require.NoError(t, err)
-	out, err := ioutil.ReadAll(r)
+	out, err := io.ReadAll(r)
 	require.NoError(t, err)
 	require.Equal(t, decoded, string(out))
 
@@ -27,7 +26,7 @@ func TestReader(t *testing.T) {
 		require.NoError(t, err)
 		_, err = r.Seek(int64(i), io.SeekCurrent)
 		require.NoError(t, err)
-		out, err = ioutil.ReadAll(r)
+		out, err = io.ReadAll(r)
 		require.NoError(t, err)
 		require.Equal(t, decoded[i:], string(out))
 	}
