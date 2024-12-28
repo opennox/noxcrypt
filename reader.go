@@ -46,7 +46,9 @@ func (r *Reader) readNext() error {
 		return err
 	}
 	r.i = 0
-	r.c.Decrypt(r.buf[:], r.buf[:])
+	if r.c != nil {
+		r.c.Decrypt(r.buf[:], r.buf[:])
+	}
 	return nil
 }
 

@@ -31,3 +31,26 @@ func TestReader(t *testing.T) {
 		require.Equal(t, decoded[i:], string(out))
 	}
 }
+
+func TestReaderNoKey(t *testing.T) {
+	const (
+		key     = NoKey
+		decoded = "ROLF\x01\x00\x00\x00\x03\x4d\x75\x64\x3e\x20\x03\x00\x08\x00\x00\x00\x00\x00\x00\x00"
+	)
+
+	r, err := NewReader(strings.NewReader(decoded), key)
+	require.NoError(t, err)
+	out, err := io.ReadAll(r)
+	require.NoError(t, err)
+	require.Equal(t, decoded, string(out))
+
+	for i := 1; i < len(decoded); i++ {
+		r, err = NewReader(strings.NewReader(decoded), key)
+		require.NoError(t, err)
+		_, err = r.Seek(int64(i), io.SeekCurrent)
+		require.NoError(t, err)
+		out, err = io.ReadAll(r)
+		require.NoError(t, err)
+		require.Equal(t, decoded[i:], string(out))
+	}
+}

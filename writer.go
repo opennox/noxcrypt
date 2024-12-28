@@ -61,7 +61,11 @@ func (w *Writer) Written() int64 {
 func (w *Writer) flush() error {
 	w.crc = UpdateCRC(w.crc, w.buf[:])
 	var dst [Block]byte
-	w.c.Encrypt(dst[:], w.buf[:])
+	if w.c != nil {
+		w.c.Encrypt(dst[:], w.buf[:])
+	} else {
+		copy(dst[:], w.buf[:])
+	}
 	_, err := w.w.Write(dst[:])
 	w.off += int64(Block - w.n)
 	w.n = 0
@@ -179,7 +183,11 @@ func (w *Writer) WriteBlockAt(buf [Block]byte, off int64) error {
 		return errors.New("WriteAt is not supported by the underlying writer")
 	}
 	var dst [Block]byte
-	w.c.Encrypt(dst[:], buf[:])
+	if w.c != nil {
+		w.c.Encrypt(dst[:], buf[:])
+	} else {
+		copy(dst[:], buf[:])
+	}
 	_, err := w.at.WriteAt(dst[:], off)
 	return err
 }
